@@ -2,4 +2,4 @@
 
 time=`date +%H:%M:%S` 
 scrot -s "$time.png" -e "curl -sF 'name=@$time.png' http://eleveni386.7axu.com/Image/"
-
+rm $time.png
