@@ -62,7 +62,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         print r, info, "by: ", self.client_address
         f = StringIO()
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Upload Result Page</title>\n")
+        f.write("<html>\n")
+        f.write("<title>Upload Result Page</title>\n")
+        f.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n')
         f.write("<body>\n<h2>Upload Result Page</h2>\n")
         f.write("<hr>\n")
         if r:
@@ -189,7 +191,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         f = StringIO()
         displaypath = cgi.escape(urllib.unquote(self.path))
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
+        f.write("<html>\n")
+        f.write("<title>Directory listing for %s</title>\n" % displaypath)
+        f.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n')
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
         f.write("<hr>\n")
         f.write("<form ENCTYPE=\"multipart/form-data\" method=\"post\">")
