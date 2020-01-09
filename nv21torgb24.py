@@ -1,7 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# NV21是420sp的一种，YYYYVUVUVU
+# 各种YUV格式详解: https://www.jianshu.com/p/e67f79f10c65
+# 1. Y∈ [0,1] U∈ [-0.5,0.5] V∈ [-0.5 ,0.5]
+# 2. Y∈[16,235] U∈[16,240] V∈[ 16,240 ]
+# 3. jpeg的标准中，Y、U、V的取值范围都是0-255
+# NV21是420sp的一种，先V后U，YYYYYYYYVUVU
+# 本文针对jpeg标准
 
 import sys
 import os
@@ -15,9 +20,6 @@ def clamp2byte(v):
         return chr(int(v))
 
 def convert(src, width, height):
-    #dst = ['0' for i in range(width * height * 3)]
-    #dst = ''.join(dst)
-
     dst = ''
     for y in range(height):
         for x in range(width):
@@ -40,7 +42,6 @@ def convert(src, width, height):
             dst += R
             dst += G
             dst += B
-
     return dst
 
 if __name__ == '__main__':
