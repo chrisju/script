@@ -33,9 +33,10 @@ def convert(src, width, height):
             V = src[width * height + (y / 2) * width + (x / 2) * 2]
             U = src[width * height + (y / 2) * width + (x / 2) * 2 + 1]
 
-            Y = ord(Y) / 254.0
-            U = ord(U) / 254.0 - 0.5
-            V = ord(V) / 254.0 - 0.5
+            # 虽然图片的实际YUV值的范围是0-254，但是当成MPEG的量化能得到较好图片
+            Y = (ord(Y) - 16) / (235.0 - 16)
+            U = (ord(U) - 16) / (240.0 - 16) - 0.5
+            V = (ord(V) - 16) / (240.0 - 16) - 0.5
 
             R = Y + 1.4017 * V;
             G = Y - 0.3437 * U - 0.7142 * V;
