@@ -16,6 +16,7 @@
 
 import sys
 import os
+#from nv21torgb24table import *
 
 def clamp2byte(v):
     if v < 0:
@@ -25,8 +26,17 @@ def clamp2byte(v):
     else:
         return chr(int(v))
 
-def convert(src, width, height):
+def clamp(v, minv, maxv):
+    if v < minv:
+        return minv
+    elif v > maxv:
+        return maxv
+    else:
+        return v
+
+def convert(src, width, height, table):
     dst = ''
+    p = 0
     for y in range(height):
         for x in range(width):
             Y = src[y * width + x]
@@ -34,13 +44,20 @@ def convert(src, width, height):
             U = src[width * height + (y / 2) * width + (x / 2) * 2 + 1]
 
             # 虽然图片的实际YUV值的范围是0-254，但是当成MPEG的量化能得到较好图片
-            Y = (ord(Y) - 16) / (235.0 - 16)
-            U = (ord(U) - 16) / (240.0 - 16) - 0.5
-            V = (ord(V) - 16) / (240.0 - 16) - 0.5
+            Y = clamp(ord(Y), 16, 235)
+            U = clamp(ord(U), 16, 240)
+            V = clamp(ord(V), 16, 240)
 
-            R = Y + 1.4017 * V;
-            G = Y - 0.3437 * U - 0.7142 * V;
-            B = Y + 1.7722 * U
+            index = 220 + int((U - 16) * 225 + (V - 16))
+            premul = table[index]
+            if p < 10:
+                print('p=', p, Y, U, V, index, premul)
+                p = p + 1
+
+            Y = table[Y - 16]
+            R = Y + premul[0] #1.4017 * V;
+            G = Y - premul[1] #0.3437 * U - 0.7142 * V;
+            B = Y + premul[2] #1.7722 * U
 
             R = clamp2byte(R * 255)
             G = clamp2byte(G * 255)
@@ -50,6 +67,27 @@ def convert(src, width, height):
             dst += G
             dst += B
     return dst
+
+def build_table():
+    # 将乘法做成查表
+    # x*255 可以转为 (x<<8) - x
+    # 建立Y -> (Y - 16) / (235.0 - 16)
+    # 建立(U,V)->((U - 16) / (240.0 - 16) - 0.5, (V - 16) / (240.0 - 16) - 0.5)->(1.4017 * V, 0.3437 * U + 0.7142 * V, 1.7722 * U)的转换表
+    # 注意UV取值范围，先对齐值再用表
+    # 由于是顺序无跳值，表可以转为数组
+    table = [0] * (220 + 225 * 225)
+    for Y in range(16, 236):
+        table[Y - 16] = (Y - 16) / (235.0 - 16)
+    for U in range(16, 241):
+        for V in range(16, 241):
+            index = 220 + int((U - 16) * 225 + (V - 16))
+            fU = (U - 16) / (240.0 - 16) - 0.5
+            fV = (V - 16) / (240.0 - 16) - 0.5
+            if index == 220 or (U == 136 and V == 125):
+                print(U, V, (1.4017 * fV, 0.3437 * fU + 0.7142 * fV, 1.7722 * fU))
+                print(U, V, repr((1.4017 * fV, 0.3437 * fU + 0.7142 * fV, 1.7722 * fU)))
+            table[index] = (1.4017 * fV, 0.3437 * fU + 0.7142 * fV, 1.7722 * fU)
+    return table
 
 if __name__ == '__main__':
 
@@ -64,7 +102,16 @@ if __name__ == '__main__':
     height = int(len(src)/1.5/width)
     print('height:' , height)
 
-    dst = convert(src, width, height)
+    table = build_table()
+    with open('nv21torgb24table.py', 'w') as f:
+        f.write('table = [');
+        for i in range(len(table)):
+            if i == 0 or i == 220:
+                print(table[i], repr(table[i]))
+            f.write('%s,' % repr(table[i]))
+        f.write(']');
+
+    dst = convert(src, width, height, table)
 
     with open(path + '.dst', 'wb') as f:
         f.write(dst)
