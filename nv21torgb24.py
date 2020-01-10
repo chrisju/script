@@ -51,14 +51,17 @@ def convert(src, width, height, table):
             index = 220 + int((U - 16) * 225 + (V - 16))
             premul = table[index]
 
+            #R = Y + 1.4017 * V;
+            #G = Y - 0.3437 * U - 0.7142 * V;
+            #B = Y + 1.7722 * U
             Y = table[Y - 16]
             R = Y + premul[0]
             G = Y - premul[1]
             B = Y + premul[2]
 
-            R = clamp2byte(R * 255)
-            G = clamp2byte(G * 255)
-            B = clamp2byte(B * 255)
+            R = clamp2byte(R >> 16)
+            G = clamp2byte(G >> 16)
+            B = clamp2byte(B >> 16)
 
             dst += R
             dst += G
@@ -71,15 +74,16 @@ def build_table():
     # 建立(U,V)->((U - 16) / (240.0 - 16) - 0.5, (V - 16) / (240.0 - 16) - 0.5)->(1.4017 * V, 0.3437 * U + 0.7142 * V, 1.7722 * U)的转换表
     # 注意UV取值范围，先对齐值再用表
     # 由于是顺序无跳值，表可以转为数组
+    # *255量化RGB，再乘65536，浮点转整数
     table = [0] * (220 + 225 * 225)
     for Y in range(16, 236):
-        table[Y - 16] = (Y - 16) / (235.0 - 16)
+        table[Y - 16] = int((Y - 16) / (235.0 - 16) * 255 * 65536)
     for U in range(16, 241):
         for V in range(16, 241):
             index = 220 + int((U - 16) * 225 + (V - 16))
             fU = (U - 16) / (240.0 - 16) - 0.5
             fV = (V - 16) / (240.0 - 16) - 0.5
-            table[index] = (1.4017 * fV, 0.3437 * fU + 0.7142 * fV, 1.7722 * fU)
+            table[index] = (int(1.4017 * fV * 255 * 65536), int(0.3437 * fU * 255 * 65536 + 0.7142 * fV * 255 * 65536), int(1.7722 * fU * 255 * 65536))
     return table
 
 if __name__ == '__main__':
