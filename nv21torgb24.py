@@ -99,12 +99,21 @@ if __name__ == '__main__':
     height = int(len(src)/1.5/width)
     print('height:' , height)
 
-    #table = build_table()
+    table = build_table()
     #with open('nv21torgb24table.py', 'w') as f:
     #    f.write('table = [');
     #    for i in range(len(table)):
     #        f.write('%s,' % repr(table[i]))
     #    f.write(']');
+    with open('nv21torgb24table.h', 'w') as f:
+        f.write('const int nv21torgb24_table_y[220] = {');
+        for i in range(220):
+            f.write('%d,' % table[i])
+        f.write('};\n');
+        f.write('const int nv21torgb24_table_uv[225*225][3] = {');
+        for i in range(220, 220 + 225 * 225):
+            f.write('{%d,%d,%d},' % table[i])
+        f.write('};');
 
     dst = convert(src, width, height, table)
 
