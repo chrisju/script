@@ -81,6 +81,7 @@ def build_table():
             index = int((U) * 256 + (V))
             fU = (clamp(U, 16, 240) - 16) / (240.0 - 16) - 0.5
             fV = (clamp(V, 16, 240) - 16) / (240.0 - 16) - 0.5
+            #最大值为255
             table[index] = (int(1.4017 * fV * 255 * 65536), int(0.3437 * fU * 255 * 65536 + 0.7142 * fV * 255 * 65536), int(1.7722 * fU * 255 * 65536))
     return table
 
@@ -104,16 +105,12 @@ if __name__ == '__main__':
     #        f.write('%s,' % repr(table[i]))
     #    f.write(']');
     with open('nv21torgb24table.h', 'w') as f:
-        f.write('const int nv21torgb24_table_y[220] = {');
-        for i in range(220):
-            f.write('%d,' % table[i])
-        f.write('};\n');
-        f.write('const int nv21torgb24_table_uv[225*225][3] = {');
-        for i in range(0, 256 * 256):
+        f.write('const int nv21torgb24_table_uv[256*256][3] = {');
+        for i in range(256 * 256):
             f.write('{%d,%d,%d},' % table[i])
         f.write('};');
 
-    dst = convert(src, width, height, table)
+    #dst = convert(src, width, height, table)
 
-    with open(path + '.dst', 'wb') as f:
-        f.write(dst)
+    #with open(path + '.dst', 'wb') as f:
+    #    f.write(dst)
