@@ -75,14 +75,12 @@ def build_table():
     # 注意UV取值范围，先对齐值再用表
     # 由于是顺序无跳值，表可以转为数组
     # *255量化RGB，再乘65536，浮点转整数
-    table = [0] * (220 + 225 * 225)
-    for Y in range(16, 236):
-        table[Y - 16] = int((Y - 16) / (235.0 - 16) * 255 * 65536)
-    for U in range(16, 241):
-        for V in range(16, 241):
-            index = 220 + int((U - 16) * 225 + (V - 16))
-            fU = (U - 16) / (240.0 - 16) - 0.5
-            fV = (V - 16) / (240.0 - 16) - 0.5
+    table = [0] * (256 * 256)
+    for U in range(256):
+        for V in range(256):
+            index = int((U) * 256 + (V))
+            fU = (clamp(U, 16, 240) - 16) / (240.0 - 16) - 0.5
+            fV = (clamp(V, 16, 240) - 16) / (240.0 - 16) - 0.5
             table[index] = (int(1.4017 * fV * 255 * 65536), int(0.3437 * fU * 255 * 65536 + 0.7142 * fV * 255 * 65536), int(1.7722 * fU * 255 * 65536))
     return table
 
@@ -111,7 +109,7 @@ if __name__ == '__main__':
             f.write('%d,' % table[i])
         f.write('};\n');
         f.write('const int nv21torgb24_table_uv[225*225][3] = {');
-        for i in range(220, 220 + 225 * 225):
+        for i in range(0, 256 * 256):
             f.write('{%d,%d,%d},' % table[i])
         f.write('};');
 
