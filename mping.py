@@ -20,6 +20,8 @@ def out():
 if __name__ == '__main__':
     print 'start ping for ' + str(n) + ' times...'
 
+    if len(sys.argv) > 1:
+        ipfile = sys.argv[1]
     f = open(ipfile)
     for line in f.readlines():
         if line.strip() and not line.startswith('#'):
