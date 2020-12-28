@@ -12,8 +12,10 @@ if len(sys.argv) < 2:
     print('example:    %s 3dof_rgb_1min.csv' % (sys.argv[0]))
     sys.exit(0)
 
+path = sys.argv[1]
+
 ts = []
-with open(sys.argv[1]) as f:
+with open(path) as f:
     while True:
         line = f.readline()
         if not line:
@@ -27,21 +29,21 @@ with open(sys.argv[1]) as f:
             except:
                 continue
 
-print('head 10 Mtime,Htime:')
-for t in ts[:10]:
-    print(t[0], t[1])
+#print('head 10 Mtime,Htime:')
+#for t in ts[:10]:
+#    print(t[0], t[1])
 
 # intv ms -> us
 for i in range(len(rawintv)):
     rawintv[i] = int(rawintv[i]*1000)
-print(rawintv)
+#print(rawintv)
 
 intvs = []
 for i in range(1, len(ts)):
     mintv = ts[i][0] - ts[i - 1][0]
     hintv = ts[i][1] - ts[i - 1][1]
     intvs.append((mintv, hintv))
-print(intvs[:10])
+#print(intvs[:10])
 
 mspecs = {}
 for a in rawintv:
@@ -63,15 +65,16 @@ for a in intvs:
     mspecs[tkey(mintv)] = mspecs[tkey(mintv)] + 1
     hspecs[tkey(hintv)] = hspecs[tkey(hintv)] + 1
 
-print(mspecs)
-print(hspecs)
+#print(mspecs)
+#print(hspecs)
+print('--------------------------------------')
 
 total = len(intvs)
-print('MTime:')
+print(path + ' MTime:')
 for i in range(len(rawintv)):
-    print('[%.1fms - %.1fms]' % (rawintv[i]/1000.0, rawintv[i+1]/1000.0 if i != len(rawintv) - 1 else 9999999), '%.2f%%' % (mspecs[rawintv[i]] * 100.0 / total))
+    print('[%.1fms - %.1fms] \t %.2f%%' % (rawintv[i]/1000.0, rawintv[i+1]/1000.0 if i != len(rawintv) - 1 else 9999999, mspecs[rawintv[i]] * 100.0 / total))
 #print('MTime average: %.1fms' % ())
 print('')
-print('HTime:')
+print(path + ' HTime:')
 for i in range(len(rawintv)):
-    print('[%.1fms - %.1fms]' % (rawintv[i]/1000.0, rawintv[i+1]/1000.0 if i != len(rawintv) - 1 else 9999999), '%.2f%%' % (hspecs[rawintv[i]] * 100.0 / total))
+    print('[%.1fms - %.1fms] \t %.2f%%' % (rawintv[i]/1000.0, rawintv[i+1]/1000.0 if i != len(rawintv) - 1 else 9999999, hspecs[rawintv[i]] * 100.0 / total))
