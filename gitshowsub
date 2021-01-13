@@ -1,0 +1,79 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import sys
+import os
+import re
+
+def usage():
+    print('show git submodule modification')
+    print('usage:')
+    print(sys.argv[0] + ' <commit> <index of submoudle>   # show one submodule modification of a commit')
+    print(sys.argv[0] + ' <index of submoudle>            # show one submodule modification of HEAD')
+
+
+if __name__ == '__main__':
+
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(0)
+
+    if len(sys.argv) == 2:
+        commit = 'HEAD'
+        index = int(sys.argv[1])
+    if len(sys.argv) == 3:
+        commit = sys.argv[1]
+        index = int(sys.argv[2])
+    print('Showing %dst submodule modification of commit %s' % (index, commit))
+
+    cmd = 'git show %s > /tmp/git_show_sub' % (commit)
+    r = os.system(cmd)
+
+    p = r'.*?a/(.*)\sb/(.*)'
+    subs = []
+    item = ''     # submodule dir
+    commits = []  # submodule commit
+    if r == 0:
+        with open('/tmp/git_show_sub') as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+
+                if line.startswith('diff --git'):
+                    m = re.match(p, line)
+                    if m:
+                        item = m.group(1)
+                        commits = []
+
+                if line.startswith('-Subproject commit'):
+                    commits.append(line.split()[2])
+                if line.startswith('+Subproject commit'):
+                    commits.append(line.split()[2])
+                    subs.append((item, commits))
+
+        currdir = os.getcwd()
+
+        # find git root dir
+        root = currdir
+        while True:
+            d = os.path.join(root, ".git")
+            if os.path.exists(d):
+                break
+            else:
+                root = os.path.join(root, '../')
+
+        os.chdir(os.path.join(root, subs[index][0]))
+
+        cmd = 'git diff --stat %s %s' % (subs[index][1][0], subs[index][1][1])
+        os.system(cmd)
+
+        print('Press any key to continue...')
+        raw_input()
+
+        cmd = 'git diff %s %s' % (subs[index][1][0], subs[index][1][1])
+        os.system(cmd)
+
+        os.chdir(currdir)
+
+
