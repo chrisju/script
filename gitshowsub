@@ -24,7 +24,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 3:
         commit = sys.argv[1]
         index = int(sys.argv[2])
-    print('Showing %dst submodule modification of commit %s' % (index, commit))
 
     cmd = 'git show %s > /tmp/git_show_sub' % (commit)
     r = os.system(cmd)
@@ -54,6 +53,9 @@ if __name__ == '__main__':
 
         currdir = os.getcwd()
 
+        index -= 1
+        print('Showing %dst submodule [%s] modification of commit %s' % (index + 1, subs[index][0], commit))
+
         # find git root dir
         root = currdir
         while True:
@@ -68,7 +70,7 @@ if __name__ == '__main__':
         cmd = 'git diff --stat %s %s' % (subs[index][1][0], subs[index][1][1])
         os.system(cmd)
 
-        print('Press any key to continue...')
+        print('Press ENTER to continue...')
         raw_input()
 
         cmd = 'git diff %s %s' % (subs[index][1][0], subs[index][1][1])
