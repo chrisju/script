@@ -8,24 +8,29 @@ import re
 def usage():
     print('show git submodule modification')
     print('usage:')
-    print(sys.argv[0] + ' <commit> <index of submoudle>   # show one submodule modification of a commit')
-    print(sys.argv[0] + ' <index of submoudle>            # show one submodule modification of HEAD')
+    print(sys.argv[0] + ' <commit1> <commit2> <index of submoudle>   # show diff between the two commits')
+    print(sys.argv[0] + ' <commit> <index of submoudle>            # show diff between commit and HEAD')
 
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         usage()
         sys.exit(0)
 
-    if len(sys.argv) == 2:
-        commit = 'HEAD'
-        index = int(sys.argv[1])
+    commit2 = ''
     if len(sys.argv) == 3:
-        commit = sys.argv[1]
+        commit1 = sys.argv[1]
         index = int(sys.argv[2])
+    if len(sys.argv) == 4:
+        commit1 = sys.argv[1]
+        commit2 = sys.argv[2]
+        index = int(sys.argv[3])
 
-    cmd = 'git show %s > /tmp/git_show_sub' % (commit)
+    if commit2:
+        cmd = 'git diff %s %s > /tmp/git_diff_sub' % (commit1, commit2)
+    else:
+        cmd = 'git diff %s > /tmp/git_diff_sub' % (commit1)
     r = os.system(cmd)
 
     p = r'.*?a/(.*)\sb/(.*)'
@@ -33,7 +38,7 @@ if __name__ == '__main__':
     item = ''     # submodule dir
     commits = []  # submodule commit
     if r == 0:
-        with open('/tmp/git_show_sub') as f:
+        with open('/tmp/git_diff_sub') as f:
             while True:
                 line = f.readline()
                 if not line:
@@ -48,8 +53,12 @@ if __name__ == '__main__':
                         commits = []
 
                 if line.startswith('-Subproject commit'):
+                    if line.find('-dirty') >= 0:
+                        line = line[:line.find('-dirty')]
                     commits.append(line.split()[2])
                 if line.startswith('+Subproject commit'):
+                    if line.find('-dirty') >= 0:
+                        line = line[:line.find('-dirty')]
                     commits.append(line.split()[2])
                     subs.append((item, commits))
         print('%d submodules modified' % (len(subs)))
@@ -57,7 +66,10 @@ if __name__ == '__main__':
         currdir = os.getcwd()
 
         index -= 1
-        print('Showing %dst submodule [%s] modification of commit %s' % (index + 1, subs[index][0], commit))
+        if commit2:
+            print('Showing %dst submodule [%s] difference of commit %s and %s' % (index + 1, subs[index][0], commit1, commit2))
+        else:
+            print('Showing %dst submodule [%s] difference of commit %s and HEAD' % (index + 1, subs[index][0], commit1))
 
         # find git root dir
         root = currdir
