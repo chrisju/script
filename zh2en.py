@@ -6,6 +6,12 @@ import re
 import requests
 import argparse
 
+def is_vsc_folder(folder_path):
+    if os.path.basename(folder_path) in ['.git', '.svn', 'CVS']:
+        return True
+    else:
+        return False
+
 def translate(text, target_lang="en"):
     """
     使用 Google Translate API 翻译文本。
@@ -97,6 +103,9 @@ def process_directory(input_dir, output_dir, target_lang="en"):
         output_dir (str): 输出目录路径
         target_lang (str): 目标语言（默认: 英文 'en'）
     """
+    if is_vsc_folder(input_dir):
+        return
+
     for root, _, files in os.walk(input_dir):
         for file in files:
             file_path = os.path.join(root, file)
