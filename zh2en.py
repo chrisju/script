@@ -57,7 +57,10 @@ def process_text(text, target_lang="en"):
     """
     def translate_match(match):
         chinese_text = match.group()
-        return translate(chinese_text, target_lang)
+        translated_txt = translate(chinese_text, target_lang)
+        new_text = ' ' + translated_txt.lower() + ' '
+        #print(f'{chinese_text} -> {new_text}')
+        return new_text
     
     # 仅匹配连续的中文字符，并逐段翻译
     return re.sub(r'[\u4e00-\u9fff]+', translate_match, text)
@@ -73,14 +76,22 @@ def process_file(file_path, output_dir, target_lang="en"):
     """
     try:
         # 读取文件内容
-        with open(file_path, "r+", encoding="utf-8") as f:
-            content = f.read()
+        try:
+            with open(file_path, "r+", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            print(f"跳过文件 {file_path}: 不是utf-8文本文件")
+            return
 
         # 翻译中文内容
         translated_content = process_text(content, target_lang)
 
+        if translated_content == content:
+            return
+
         # 确保输出目录存在
-        os.makedirs(output_dir, exist_ok=True)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
 
         # 保存结果到输出目录
         if output_dir:
@@ -106,10 +117,15 @@ def process_directory(input_dir, output_dir, target_lang="en"):
     if is_vsc_folder(input_dir):
         return
 
-    for root, _, files in os.walk(input_dir):
-        for file in files:
-            file_path = os.path.join(root, file)
-            process_file(file_path, output_dir, target_lang)
+    for item in os.listdir(input_dir):
+        input_path = os.path.join(input_dir, item)
+        if os.path.isdir(input_path):
+            print(f'处理目录 {input_path} ...')
+            process_directory(input_path, output_dir, target_lang)
+        else:
+            print(f"处理文件 {input_path} ...")
+            process_file(input_path, output_dir, target_lang)
+
 
 def main():
     """
