@@ -34,15 +34,16 @@ def save_data(data):
         json.dump(data, f, indent=4)
 
 # 记录考勤
-def record_attendance(month, day, time):
+def record_attendance(month, day, times):
     data = load_data()
     today = f"{month:02d}-{day:02d}"
     if today not in data:
         data[today] = {"times": [], "memo": ""}
-    data[today]["times"].append(time)
+    for time in times:
+        data[today]["times"].append(time)
     data[today]["times"] = sorted(set(data[today]["times"]))  # 去重并排序
     save_data(data)
-    print(f"已记录：{today} {time}")
+    print(f"已记录：{today} {times}")
 
 # 记录备注
 def record_memo(month, day, memo):
@@ -83,8 +84,11 @@ def export_to_excel(target_month):
         info = data.get(date_str, {"times": [], "memo": ""})
 
         if info["times"]:
-            start_time = round_time_to_nearest_10(info["times"][0], round_up=False)
-            end_time = round_time_to_nearest_10(info["times"][-1], round_up=True)
+            l = [f'0{time}' if len(time) == 4 else time for time in info["times"]]
+            assert all(map(lambda s: len(s) == 5, l))
+            l.sort()
+            start_time = round_time_to_nearest_10(l[0], round_up=False)
+            end_time = round_time_to_nearest_10(l[-1], round_up=True)
         else:
             start_time, end_time = "", ""
 
@@ -141,6 +145,7 @@ def export_to_excel(target_month):
         for idx, row in enumerate(df.itertuples(), start=6):
             date_obj = datetime.date(year, target_month, int(row.日期[:-1]))
             if jpholiday.is_holiday(date_obj):
+                sheet[f"E{idx}"] = jpholiday.is_holiday_name(date_obj)
                 for col in "ABCDE":
                     sheet[f"{col}{idx}"].fill = fill_holiday
             elif date_obj.weekday() in [5, 6]:  # 周六、周日
@@ -223,6 +228,6 @@ if __name__ == "__main__":
         fill_workdays(args.fill[0], args.fill[1], int(args.s[0]) if args.s else None)
     else:
         if args.s:
-            record_attendance(int(args.s[0]), int(args.s[1]), args.s[2])
+            record_attendance(int(args.s[0]), int(args.s[1]), args.s[2:])
         else:
             record_attendance(now.month, now.day, now.strftime("%H:%M"))
