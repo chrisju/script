@@ -3,11 +3,12 @@
 
 import sys, os
 import json
-import os
+import re
 import argparse
 import datetime
 import pandas as pd
 import jpholiday
+import locale
 from openpyxl.styles import PatternFill, Alignment, Font
 from openpyxl.styles import Border, Side
 
@@ -38,6 +39,10 @@ def save_data(data):
     #print(f"保存文件[{DATA_FILE}]")
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
+
+def get_weekday(dateobj):
+    locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
+    return dateobj.strftime('%a')
 
 # 记录考勤
 def record_attendance(month, day, times):
@@ -102,7 +107,7 @@ def export_to_excel(target_month):
         if work_hours:
             total_hours += work_hours
 
-        records.append([f"{day:02d}日", start_time, end_time, work_hours, info["memo"]])
+        records.append([f"{day:02d}日({get_weekday(date_obj)})", start_time, end_time, work_hours, info["memo"]])
 
     df = pd.DataFrame(records, columns=["日期", "上班时间", "下班时间", "出勤时长", "备注"])
 
@@ -149,7 +154,9 @@ def export_to_excel(target_month):
         fill_weekend = PatternFill(start_color="DDDDFF", end_color="DDDDFF", fill_type="solid")
 
         for idx, row in enumerate(df.itertuples(), start=6):
-            date_obj = datetime.date(year, target_month, int(row.日期[:-1]))
+            #date_obj = datetime.date(year, target_month, int(row.日期[:-1]))
+            target_day = int(re.search(r'\d+', row.日期).group())
+            date_obj = datetime.date(year, target_month, target_day)
             if jpholiday.is_holiday(date_obj):
                 sheet[f"E{idx}"] = jpholiday.is_holiday_name(date_obj)
                 for col in "ABCDE":
