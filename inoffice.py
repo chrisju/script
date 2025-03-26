@@ -14,7 +14,9 @@ from openpyxl.styles import Border, Side
 # 存储数据的 JSON 文件
 DATA_FILE = f"/home/r/proj/zz/script/inoffice-{datetime.datetime.now().year}.json"
 ENV_NAME = 'MYNAME'
-output = "{myname}出勤_{target_month:02d}.xlsx"
+OUTPUT = "{myname}出勤_{target_month:02d}.xlsx"
+BREAK_START = "12:30"
+BREAK_END = "13:30"
 
 # 初始化数据文件
 if not os.path.exists(DATA_FILE):
@@ -95,7 +97,7 @@ def export_to_excel(target_month):
     df = pd.DataFrame(records, columns=["日期", "上班时间", "下班时间", "出勤时长", "备注"])
 
     myname = os.getenv(ENV_NAME) or ''
-    file_name = eval(f'f"{output}"')
+    file_name = eval(f'f"{OUTPUT}"')
     with pd.ExcelWriter(file_name, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name=f"{target_month}月", startrow=4)
 
@@ -117,7 +119,7 @@ def export_to_excel(target_month):
         sheet["A5"] = "日期"
 
         # **添加计算说明**
-        sheet[f"A{len(df)+7}"] = "※ 12:30 - 13:15 的休息时间不计入出勤时长"
+        sheet[f"A{len(df)+7}"] = f"※ {BREAK_START} - {BREAK_END} 的休息时间不计入出勤时长"
 
         # **统一格式**
         content_font = Font(size=11)
@@ -163,8 +165,8 @@ def calculate_work_hours(start, end):
     end_time = datetime.datetime.strptime(end, "%H:%M")
 
     # 休息时间段
-    break_start = datetime.datetime.strptime("12:30", "%H:%M")
-    break_end = datetime.datetime.strptime("13:15", "%H:%M")
+    break_start = datetime.datetime.strptime(BREAK_START, "%H:%M")
+    break_end = datetime.datetime.strptime(BREAK_END, "%H:%M")
 
     work_seconds = (end_time - start_time).total_seconds()
 
