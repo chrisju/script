@@ -13,23 +13,29 @@ from openpyxl.styles import Border, Side
 
 # 存储数据的 JSON 文件
 DATA_FILE = f"/home/r/proj/zz/script/inoffice-{datetime.datetime.now().year}.json"
-ENV_NAME = 'MYNAME'
-OUTPUT = "{myname}出勤_{target_month:02d}.xlsx"
 BREAK_START = "12:30"
 BREAK_END = "13:30"
-
-# 初始化数据文件
-if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w") as f:
-        json.dump({}, f)
+ENV_NAME = 'MYNAME'
+OUTPUT = "{myname}出勤_{target_month:02d}.xlsx"
 
 # 读取 JSON 数据
 def load_data():
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+    global DATA_FILE
+    if not os.path.exists(os.path.dirname(DATA_FILE)):
+        print(f"[{os.path.dirname(DATA_FILE)}]不存在，使用用户主目录")
+        DATA_FILE = os.path.join(os.path.expanduser("~"), f"inoffice-{datetime.datetime.now().year}.json")
+    #print(f"读取文件[{DATA_FILE}]")
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
 
 # 保存 JSON 数据
 def save_data(data):
+    global DATA_FILE
+    if not os.path.exists(os.path.dirname(DATA_FILE)):
+        DATA_FILE = os.path.join(os.path.expanduser("~"), f"inoffice-{datetime.datetime.now().year}.json")
+    #print(f"保存文件[{DATA_FILE}]")
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -200,7 +206,7 @@ def fill_workdays(start_time, end_time, inmonth):
 
 if __name__ == "__main__":
     # 解析命令行参数
-    parser = argparse.ArgumentParser(description="出勤记录工具")
+    parser = argparse.ArgumentParser(description="出勤记录工具。不带参数运行会进行打卡。")
     parser.add_argument("-m", nargs="+", metavar="MEMO", help="记录备注")
     parser.add_argument("-s", nargs="+", metavar=("DATE"), help="记录指定日期的时间")
     parser.add_argument("-o", action="store_true", help="导出当月 Excel")
@@ -211,10 +217,10 @@ if __name__ == "__main__":
     # 获取当前日期
     now = datetime.datetime.now()
 
-    print('--------args.m:', args.m)
-    print('--------args.s:', args.s)
-    print('--------args.o:', args.o)
-    print('--------args.M:', args.M)
+    #print('--------args.m:', args.m)
+    #print('--------args.s:', args.s)
+    #print('--------args.o:', args.o)
+    #print('--------args.M:', args.M)
     # 处理参数逻辑
     if args.m:
         memo_text = " ".join(args.m)
@@ -230,4 +236,4 @@ if __name__ == "__main__":
         if args.s:
             record_attendance(int(args.s[0]), int(args.s[1]), args.s[2:])
         else:
-            record_attendance(now.month, now.day, now.strftime("%H:%M"))
+            record_attendance(now.month, now.day, [now.strftime("%H:%M")])
