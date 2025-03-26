@@ -174,32 +174,53 @@ def calculate_work_hours(start, end):
     work_hours = work_seconds / 3600
     return max(0, round(work_hours, 1))
 
-# 解析命令行参数
-parser = argparse.ArgumentParser(description="出勤记录工具")
-parser.add_argument("-m", nargs=1, metavar="MEMO", help="记录备注")
-parser.add_argument("-s", nargs="+", metavar=("DATE"), help="记录指定日期的时间")
-parser.add_argument("-o", action="store_true", help="导出当月 Excel")
-parser.add_argument("-M", type=int, metavar="MONTH", help="导出指定月份的 Excel")
-args = parser.parse_args()
+def fill_workdays(start_time, end_time, inmonth):
+    data = load_data()
+    today = datetime.date.today()
+    year, month = today.year, inmonth or today.month
+    days_in_month = (datetime.date(year, month % 12 + 1, 1) - datetime.timedelta(days=1)).day
 
-# 获取当前日期
-now = datetime.datetime.now()
+    for day in range(1, days_in_month + 1):
+        date_str = f"{month:02d}-{day:02d}"
+        date_obj = datetime.date(year, month, day)
 
-print('--------args.m:', args.m)
-print('--------args.s:', args.s)
-print('--------args.o:', args.o)
-print('--------args.M:', args.M)
-# 处理参数逻辑
-if args.m:
-    memo_text = " ".join(args.m)
-    if args.s:
-        record_memo(int(args.s[0]), int(args.s[1]), memo_text)
+        if date_str not in data and date_obj.weekday() < 5 and not jpholiday.is_holiday(date_obj):
+            data[date_str] = {"times": [start_time, end_time], "memo": ""}
+
+    save_data(data)
+    print(f"已填充 {month} 月所有未记录的工作日：{start_time} - {end_time}")
+
+
+if __name__ == "__main__":
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description="出勤记录工具")
+    parser.add_argument("-m", nargs="+", metavar="MEMO", help="记录备注")
+    parser.add_argument("-s", nargs="+", metavar=("DATE"), help="记录指定日期的时间")
+    parser.add_argument("-o", action="store_true", help="导出当月 Excel")
+    parser.add_argument("-M", type=int, metavar="MONTH", help="导出指定月份的 Excel")
+    parser.add_argument("--fill", nargs=2, metavar=("START", "END"), help="填充所有未记录的工作日时间")
+    args = parser.parse_args()
+
+    # 获取当前日期
+    now = datetime.datetime.now()
+
+    print('--------args.m:', args.m)
+    print('--------args.s:', args.s)
+    print('--------args.o:', args.o)
+    print('--------args.M:', args.M)
+    # 处理参数逻辑
+    if args.m:
+        memo_text = " ".join(args.m)
+        if args.s:
+            record_memo(int(args.s[0]), int(args.s[1]), memo_text)
+        else:
+            record_memo(now.month, now.day, memo_text)
+    elif args.o:
+        export_to_excel(args.M if args.M else now.month)
+    elif args.fill:
+        fill_workdays(args.fill[0], args.fill[1], int(args.s[0]) if args.s else None)
     else:
-        record_memo(now.month, now.day, memo_text)
-elif args.o:
-    export_to_excel(args.M if args.M else now.month)
-else:
-    if args.s:
-        record_attendance(int(args.s[0]), int(args.s[1]), args.s[2])
-    else:
-        record_attendance(now.month, now.day, now.strftime("%H:%M"))
+        if args.s:
+            record_attendance(int(args.s[0]), int(args.s[1]), args.s[2])
+        else:
+            record_attendance(now.month, now.day, now.strftime("%H:%M"))
