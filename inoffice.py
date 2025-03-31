@@ -18,6 +18,7 @@ BREAK_START = "12:30"
 BREAK_END = "13:30"
 ENV_NAME = 'OUTPUT_PREFIX'
 OUTPUT = "{oprefix}出勤_{target_month:02d}.xlsx"
+HOURS = 8.0
 
 # 读取 JSON 数据
 def load_data():
@@ -111,6 +112,11 @@ def export_to_excel(target_month):
 
     df = pd.DataFrame(records, columns=["日期", "上班时间", "下班时间", "出勤时长", "备注"])
 
+    # **周末 & 日本法定假日 & 工时不满高亮**
+    fill_holiday = PatternFill(start_color="FFDDDD", end_color="FFDDDD", fill_type="solid")
+    fill_weekend = PatternFill(start_color="DDDDFF", end_color="DDDDFF", fill_type="solid")
+    fill_bad = PatternFill(start_color="880000", end_color="880000", fill_type="solid")
+
     oprefix = os.getenv(ENV_NAME) or ''
     file_name = eval(f'f"{OUTPUT}"')
     if not os.path.dirname(file_name):
@@ -152,13 +158,10 @@ def export_to_excel(target_month):
         for col, width in column_widths.items():
             sheet.column_dimensions[col].width = width
 
-        # **周末 & 日本法定假日高亮**
-        fill_holiday = PatternFill(start_color="FFDDDD", end_color="FFDDDD", fill_type="solid")
-        fill_weekend = PatternFill(start_color="DDDDFF", end_color="DDDDFF", fill_type="solid")
-
         for idx, row in enumerate(df.itertuples(), start=6):
             #date_obj = datetime.date(year, target_month, int(row.日期[:-1]))
             target_day = int(re.search(r'\d+', row.日期).group())
+            target_hours = row.出勤时长
             date_obj = datetime.date(year, target_month, target_day)
             if jpholiday.is_holiday(date_obj):
                 sheet[f"E{idx}"] = jpholiday.is_holiday_name(date_obj)
@@ -167,6 +170,9 @@ def export_to_excel(target_month):
             elif date_obj.weekday() in [5, 6]:  # 周六、周日
                 for col in "ABCDE":
                     sheet[f"{col}{idx}"].fill = fill_weekend
+            #elif target_hours < HOURS:
+            #    for col in "ABCDE":
+            #        sheet[f"{col}{idx}"].fill = fill_bad
 
         # **边框样式**
         thin_border = Border(left=Side(style="thin"), right=Side(style="thin"),
