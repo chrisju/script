@@ -16,8 +16,8 @@ from openpyxl.styles import Border, Side
 DATA_FILE = f"/home/r/proj/zz/script/inoffice-{datetime.datetime.now().year}.json"
 BREAK_START = "12:30"
 BREAK_END = "13:30"
-ENV_NAME = 'MYNAME'
-OUTPUT = "{myname}出勤_{target_month:02d}.xlsx"
+ENV_NAME = 'OUTPUT_PREFIX'
+OUTPUT = "{oprefix}出勤_{target_month:02d}.xlsx"
 
 # 读取 JSON 数据
 def load_data():
@@ -111,8 +111,11 @@ def export_to_excel(target_month):
 
     df = pd.DataFrame(records, columns=["日期", "上班时间", "下班时间", "出勤时长", "备注"])
 
-    myname = os.getenv(ENV_NAME) or ''
+    oprefix = os.getenv(ENV_NAME) or ''
     file_name = eval(f'f"{OUTPUT}"')
+    if not os.path.dirname(file_name):
+        # 如果没有路径，则在前面加上 './'
+        file_name = f"./{file_name}"
     with pd.ExcelWriter(file_name, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name=f"{target_month}月", startrow=4)
 
@@ -172,6 +175,7 @@ def export_to_excel(target_month):
             for cell in row:
                 cell.border = thin_border
 
+    print(f"环境变量OUTPUT_PREFIX：{oprefix}")
     print(f"Excel 导出完成：{file_name}")
 
 # 计算出勤时长
