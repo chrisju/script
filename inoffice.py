@@ -220,6 +220,9 @@ def fill_workdays(start_time, end_time, inmonth):
 
         if date_str not in data and date_obj.weekday() < 5 and not jpholiday.is_holiday(date_obj):
             data[date_str] = {"times": [start_time, end_time], "memo": ""}
+        if len(data[date_str]["times"]) < 2:
+            data[date_str]["times"].append(start_time)
+            data[date_str]["times"].append(end_time)
 
     save_data(data)
     print(f"已填充 {month} 月所有未记录的工作日：{start_time} - {end_time}")
