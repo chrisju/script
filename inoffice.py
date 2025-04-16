@@ -86,7 +86,7 @@ def export_to_excel(target_month):
     today = datetime.date.today()
     year = today.year
 
-    days_in_month = (datetime.date(year, target_month % 12 + 1, 1) - datetime.timedelta(days=1)).day
+    days_in_month = (datetime.date(year + (target_month // 12), target_month % 12 + 1, 1) - datetime.timedelta(days=1)).day
     records = []
     total_hours = 0
 
@@ -96,6 +96,10 @@ def export_to_excel(target_month):
         info = data.get(date_str, {"times": [], "memo": ""})
 
         if info["times"]:
+            if len(info["times"]) < 2:
+                print('记录不全:')
+                print(' '.join([date_str, info['memo'], 'times:', str(info['times'])]))
+                sys.exit(1)
             l = [f'0{time}' if len(time) == 4 else time for time in info["times"]]
             assert all(map(lambda s: len(s) == 5, l))
             l.sort()
@@ -220,6 +224,16 @@ def fill_workdays(start_time, end_time, inmonth):
     save_data(data)
     print(f"已填充 {month} 月所有未记录的工作日：{start_time} - {end_time}")
 
+#        date_str = f"{target_month:02d}-{day:02d}"
+def list_workdays(target_month):
+    data = load_data()
+
+    print(f"{target_month} 月记录：")
+    for k, v in data.items():
+        prefix = f"{target_month:02d}-"
+        if k.startswith(prefix):
+            print(' '.join([k, v['memo'], 'times:', str(v['times'])]))
+
 
 if __name__ == "__main__":
     # 解析命令行参数
@@ -229,6 +243,8 @@ if __name__ == "__main__":
     parser.add_argument("-o", action="store_true", help="导出当月 Excel")
     parser.add_argument("-M", type=int, metavar="MONTH", help="导出指定月份的 Excel")
     parser.add_argument("--fill", nargs=2, metavar=("START", "END"), help="填充所有未记录的工作日时间")
+    parser.add_argument("-l", "--list", dest="list", action="store_true", help="列出所有记录")
+
     args = parser.parse_args()
 
     # 获取当前日期
@@ -249,6 +265,8 @@ if __name__ == "__main__":
         export_to_excel(args.M if args.M else now.month)
     elif args.fill:
         fill_workdays(args.fill[0], args.fill[1], int(args.s[0]) if args.s else None)
+    elif args.list:
+        list_workdays(args.M if args.M else now.month)
     else:
         if args.s:
             record_attendance(int(args.s[0]), int(args.s[1]), args.s[2:])
