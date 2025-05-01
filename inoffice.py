@@ -13,7 +13,7 @@ from openpyxl.styles import PatternFill, Alignment, Font
 from openpyxl.styles import Border, Side
 
 # 存储数据的 JSON 文件
-DATA_FILE = f"/home/r/proj/zz/script/inoffice-{datetime.datetime.now().year}.json"
+DATA_FILE = f"/home/zz/script/inoffice-{datetime.datetime.now().year}.json"
 BREAK_START = "12:30"
 BREAK_END = "13:30"
 ENV_NAME = 'OUTPUT_PREFIX'
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     elif args.o:
         export_to_excel(args.M if args.M else now.month)
     elif args.fill:
-        fill_workdays(args.fill[0], args.fill[1], int(args.s[0]) if args.s else None)
+        fill_workdays(args.fill[0], args.fill[1], args.M if args.M else None)
     elif args.list:
         list_workdays(args.M if args.M else now.month)
     else:
