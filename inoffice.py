@@ -16,7 +16,7 @@ from openpyxl.styles import Border, Side
 DATA_FILE = f"/home/zz/script/inoffice-{datetime.datetime.now().year}.json"
 BREAK_START = "12:30"
 BREAK_END = "13:30"
-ENV_NAME = 'OUTPUT_PREFIX'
+ENV_NAME = 'MYNAME'
 OUTPUT = "{oprefix}出勤_{target_month:02d}.xlsx"
 HOURS = 8.0
 
@@ -220,7 +220,7 @@ def fill_workdays(start_time, end_time, inmonth):
 
         if date_str not in data and date_obj.weekday() < 5 and not jpholiday.is_holiday(date_obj):
             data[date_str] = {"times": [start_time, end_time], "memo": ""}
-        if len(data[date_str]["times"]) < 2:
+        if date_str in data and len(data[date_str]["times"]) < 2:
             data[date_str]["times"].append(start_time)
             data[date_str]["times"].append(end_time)
 
